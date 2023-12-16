@@ -3,6 +3,7 @@
 static const char *TAG = "main";
 //-------------------------------------------------------------
 #define DS18B20_RESOLUTION   (DS18B20_RESOLUTION_12_BIT)
+#define MAX_DEVICES  (3)
 //-------------------------------------------------------------
 void app_main(void)
 {
@@ -65,68 +66,7 @@ void app_main(void)
       printf("An error occurred reading ROM code: %d", status);
     }
   }
-  else
-  {
-    // Search for a known ROM code (LSB first):
-    // 0xb60416847630ff28
-    OneWireBus_ROMCode known_device1 = {
-      .fields.family = { 0x28 },
-      .fields.serial_number = { 0xff, 0x30, 0x76, 0x84, 0x16, 0x04 },
-      .fields.crc = { 0xb6 },
-    };
-    char rom_code_s1[OWB_ROM_CODE_STRING_LENGTH];
-    owb_string_from_rom_code(known_device1, rom_code_s1, sizeof(rom_code_s1));
-    bool is_present = false;
-    owb_status search_status = owb_verify_rom(owb, known_device1, &is_present);
-    if (search_status == OWB_STATUS_OK)
-    {
-        printf("Device %s is %s\n", rom_code_s1, is_present ? "present" : "not present");
-    }
-    else
-    {
-        printf("An error occurred searching for known device: %d", search_status);
-    }
-
-    // Search for a known ROM code (LSB first):
-    // 0x625d53c70664ff28
-    OneWireBus_ROMCode known_device2 = {
-        .fields.family = { 0x28 },
-        .fields.serial_number = { 0xff, 0x64, 0x06, 0xc7, 0x53, 0x5d },
-        .fields.crc = { 0x62 },
-    };
-    char rom_code_s2[OWB_ROM_CODE_STRING_LENGTH];
-    owb_string_from_rom_code(known_device2, rom_code_s2, sizeof(rom_code_s2));
-    is_present = false;
-    search_status = owb_verify_rom(owb, known_device2, &is_present);
-    if (search_status == OWB_STATUS_OK)
-    {
-        printf("Device %s is %s\n", rom_code_s2, is_present ? "present" : "not present");
-    }
-    else
-    {
-        printf("An error occurred searching for known device: %d", search_status);
-    }
-
-    // Search for a known ROM code (LSB first):
-    // 0xad6629c70664ff28
-    OneWireBus_ROMCode known_device3 = {
-      .fields.family = { 0x28 },
-      .fields.serial_number = { 0xff, 0x64, 0x06, 0xc7, 0x29, 0x66 },
-      .fields.crc = { 0xad },
-    };
-    char rom_code_s3[OWB_ROM_CODE_STRING_LENGTH];
-    is_present = false;
-    owb_string_from_rom_code(known_device3, rom_code_s3, sizeof(rom_code_s3));
-    search_status = owb_verify_rom(owb, known_device3, &is_present);
-    if (search_status == OWB_STATUS_OK)
-    {
-      printf("Device %s is %s\n", rom_code_s3, is_present ? "present" : "not present");
-    }
-    else
-    {
-      printf("An error occurred searching for known device: %d", search_status);
-    }
-  }
+  
   // Create DS18B20 devices on the 1-Wire bus
   DS18B20_Info * devices[MAX_DEVICES] = {0};
   for (int i = 0; i < num_devices; ++i)
@@ -145,16 +85,6 @@ void app_main(void)
     ds18b20_use_crc(ds18b20_info, true);           // enable CRC check on all reads
     ds18b20_set_resolution(ds18b20_info, DS18B20_RESOLUTION);
   }
-
-  // Check for parasitic-powered devices
-  bool parasitic_power = false;
-  ds18b20_check_for_parasite_power(owb, &parasitic_power);
-
-  if (parasitic_power) {
-      printf("Parasitic-powered devices detected");
-  }
-
-  owb_use_parasitic_power(owb, parasitic_power);
 
   if (num_devices > 0)
   {
